@@ -19,10 +19,8 @@ in
 
   networking.hostName = "junjiepc";
   networking.networkmanager.enable = true;
-  boot.loader.grub = {
-    enable = true;
-    device = "/dev/vda";
-  };
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
   hardware.bluetooth.enable = true;
   services.udisks2.enable = true;
   services.upower.enable = true;
