@@ -42,6 +42,7 @@
     neovim
     pass
     fzf
+    slack
   ];
 
   xdg.enable = true;

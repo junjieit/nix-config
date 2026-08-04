@@ -109,7 +109,6 @@ in
     sddmGreenleafTheme
     ghostty
     google-chrome
-    slack
     kdePackages.dolphin
     rofi
     hyprlock
