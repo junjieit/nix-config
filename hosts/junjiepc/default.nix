@@ -108,6 +108,8 @@ in
   environment.systemPackages = with pkgs; [
     sddmGreenleafTheme
     ghostty
+    google-chrome
+    slack
     kdePackages.dolphin
     rofi
     hyprlock

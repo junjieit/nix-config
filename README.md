@@ -5,6 +5,9 @@ Hyprland.
 
 ## First installation
 
+Detailed step-by-step instructions (make bootable USB, partitioning,
+install, first boot) are in [`docs/install.md`](docs/install.md).
+
 Boot the NixOS installer, partition and mount the target system at `/mnt`, then
 generate and retain the machine-specific hardware module:
 
