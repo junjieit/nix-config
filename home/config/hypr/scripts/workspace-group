@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# Map logical workspaces (1-10) to a persistent environment group.
+
+set -euo pipefail
+
+readonly GROUP_COUNT=5
+readonly WORKSPACES_PER_GROUP=10
+readonly STATE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/hypr-workspace-groups"
+readonly CURRENT_GROUP_FILE="$STATE_DIR/current-group"
+
+mkdir -p "$STATE_DIR"
+
+usage() {
+    printf 'Usage: %s {switch GROUP|workspace NUMBER|move NUMBER}\n' "$0" >&2
+    exit 2
+}
+
+valid_number() {
+    [[ "$1" =~ ^[0-9]+$ ]]
+}
+
+current_group() {
+    local group=1
+    [[ -f "$CURRENT_GROUP_FILE" ]] && group=$(<"$CURRENT_GROUP_FILE")
+    if ! valid_number "$group" || (( group < 1 || group > GROUP_COUNT )); then
+        group=1
+    fi
+    printf '%s\n' "$group"
+}
+
+workspace_id() {
+    local group=$1 logical_workspace=$2
+    printf '%s\n' "$(( (group - 1) * WORKSPACES_PER_GROUP + logical_workspace ))"
+}
+
+focus_workspace() {
+    local workspace=$1
+    hyprctl dispatch "hl.dsp.focus({ workspace = \"$workspace\" })"
+}
+
+focus_monitor() {
+    local monitor=$1
+    monitor=${monitor//\\/\\\\}
+    monitor=${monitor//\"/\\\"}
+    hyprctl dispatch "hl.dsp.focus({ monitor = \"$monitor\" })"
+}
+
+move_window_to_workspace() {
+    local workspace=$1
+    hyprctl dispatch "hl.dsp.window.move({ workspace = \"$workspace\" })"
+}
+
+logical_workspace() {
+    local workspace=$1
+    printf '%s\n' "$(( (workspace - 1) % WORKSPACES_PER_GROUP + 1 ))"
+}
+
+save_visible_workspaces() {
+    local monitor workspace group
+    while IFS=$'\t' read -r monitor workspace; do
+        valid_number "$workspace" || continue
+        (( workspace > 0 )) || continue
+        group=$(( (workspace - 1) / WORKSPACES_PER_GROUP + 1 ))
+        (( group <= GROUP_COUNT )) || continue
+        printf '%s\n' "$workspace" > "$STATE_DIR/group-${group}-${monitor}"
+    done < <(hyprctl -j monitors | jq -r '.[] | select(.activeWorkspace.id > 0) | "\(.name)\t\(.activeWorkspace.id)"')
+}
+
+update_wayle_workspace_filter() {
+    local active_group=$1 group logical workspace json="[" separator=""
+
+    command -v wayle >/dev/null 2>&1 || return 0
+
+    for ((group = 1; group <= GROUP_COUNT; group++)); do
+        (( group == active_group )) && continue
+        for ((logical = 1; logical <= WORKSPACES_PER_GROUP; logical++)); do
+            workspace=$(workspace_id "$group" "$logical")
+            json+="${separator}\"${workspace}\""
+            separator=","
+        done
+    done
+    json+="]"
+
+    # Wayle applies this filter to its Hyprland workspace module, preventing
+    # inactive environment groups from appearing as duplicate logical labels.
+    wayle config set modules.hyprland-workspaces.workspace-ignore "$json" >/dev/null
+}
+
+switch_group() {
+    local target_group=$1 focused_monitor monitor workspace fallback target
+    valid_number "$target_group" && (( target_group >= 1 && target_group <= GROUP_COUNT )) || usage
+
+    focused_monitor=$(hyprctl -j monitors | jq -r '.[] | select(.focused) | .name')
+    save_visible_workspaces
+
+    # Each display returns to its last workspace in this group. A newly-created
+    # group starts at the logical workspace currently visible on that display.
+    while IFS=$'\t' read -r monitor workspace; do
+        valid_number "$workspace" || continue
+        fallback=$(logical_workspace "$workspace")
+        if [[ -f "$STATE_DIR/group-${target_group}-${monitor}" ]]; then
+            target=$(<"$STATE_DIR/group-${target_group}-${monitor}")
+        else
+            target=$(workspace_id "$target_group" "$fallback")
+        fi
+        focus_monitor "$monitor" >/dev/null
+        focus_workspace "$target" >/dev/null
+    done < <(hyprctl -j monitors | jq -r '.[] | select(.activeWorkspace.id > 0) | "\(.name)\t\(.activeWorkspace.id)"')
+
+    [[ -n "$focused_monitor" ]] && focus_monitor "$focused_monitor" >/dev/null
+    printf '%s\n' "$target_group" > "$CURRENT_GROUP_FILE"
+    update_wayle_workspace_filter "$target_group"
+}
+
+select_workspace() {
+    local logical=$1 group target
+    valid_number "$logical" && (( logical >= 1 && logical <= WORKSPACES_PER_GROUP )) || usage
+    group=$(current_group)
+    target=$(workspace_id "$group" "$logical")
+    focus_workspace "$target"
+}
+
+move_to_workspace() {
+    local logical=$1 group target
+    valid_number "$logical" && (( logical >= 1 && logical <= WORKSPACES_PER_GROUP )) || usage
+    group=$(current_group)
+    target=$(workspace_id "$group" "$logical")
+    move_window_to_workspace "$target"
+}
+
+case "${1:-}" in
+    switch) [[ $# -eq 2 ]] || usage; switch_group "$2" ;;
+    workspace) [[ $# -eq 2 ]] || usage; select_workspace "$2" ;;
+    move) [[ $# -eq 2 ]] || usage; move_to_workspace "$2" ;;
+    *) usage ;;
+esac
