@@ -14,11 +14,16 @@ in
 
 {
   nixpkgs.config.allowUnfree = true;
+  nix.settings.sandbox = false;
   imports = lib.optional (builtins.pathExists ./hardware-configuration.nix)
     ./hardware-configuration.nix;
 
   networking.hostName = "junjiepc";
   networking.networkmanager.enable = true;
+  networking.firewall = {
+    allowedTCPPorts = [ 53317 ];
+    allowedUDPPorts = [ 53317 ];
+  };
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   hardware.bluetooth.enable = true;
@@ -33,7 +38,11 @@ in
     type = "fcitx5";
     fcitx5 = {
       waylandFrontend = true;
-      addons = [ pkgs.qt6Packages.fcitx5-chinese-addons ];
+      addons = with pkgs; [
+        qt6Packages.fcitx5-chinese-addons
+        fcitx5-gtk
+        qt6Packages.fcitx5-qt
+      ];
       settings.inputMethod = {
         "Groups/0" = {
           Name = "Default";
@@ -62,6 +71,14 @@ in
     extraGroups = [ "networkmanager" "wheel" ];
     shell = pkgs.zsh;
   };
+
+  nixpkgs.overlays = [
+    (final: prev: {
+      hyprland = prev.hyprland.overrideAttrs (oldAttrs: {
+        nativeBuildInputs = (oldAttrs.nativeBuildInputs or []) ++ [ final.git ];
+      });
+    })
+  ];
 
   programs.zsh.enable = true;
   programs.hyprland.enable = true;
@@ -128,8 +145,6 @@ in
     jq
     mpc
     mpd
-    fcitx5
-    qt6Packages.fcitx5-chinese-addons
     udiskie
     lxqt.lxqt-policykit
     pass
@@ -139,6 +154,7 @@ in
     cava
     pavucontrol
     xdg-desktop-portal-hyprland
+    nix-output-monitor
   ];
 
   home-manager = {

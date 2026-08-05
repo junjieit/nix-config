@@ -22,14 +22,18 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 315532800,
-        "narHash": "sha256-1+YGJM7PLfvTsbUxDHKj0NcuEXYFHfZBDuajujCcVmY=",
-        "type": "tarball",
-        "url": "https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz"
+        "lastModified": 1785747939,
+        "narHash": "sha256-D740uKsMbgsfK2oaDenJLLPIZfq7W0/g4KN/Fls8eKs=",
+        "ref": "nixpkgs-unstable",
+        "rev": "104240a772428cc2e20d8fd86c9ddbb886bbaff2",
+        "revCount": 1046984,
+        "type": "git",
+        "url": "https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git"
       },
       "original": {
-        "type": "tarball",
-        "url": "https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz"
+        "ref": "nixpkgs-unstable",
+        "type": "git",
+        "url": "https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git"
       }
     },
     "root": {

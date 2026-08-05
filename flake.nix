@@ -2,7 +2,7 @@
   description = "junjie's NixOS configuration";
 
   inputs = {
-    nixpkgs.url = "tarball+https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable/nixexprs.tar.xz";
+    nixpkgs.url = "git+https://mirrors.tuna.tsinghua.edu.cn/git/nixpkgs.git?ref=nixpkgs-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
