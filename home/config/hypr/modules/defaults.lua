@@ -5,7 +5,7 @@ local function generic_single_display_profile()
             outputs = {},
             workspace_outputs = {},
         },
-        bluetooth_device = nil,
+        bluetooth_device = "90:FB:5D:06:F5:CB",
     }
 end
 

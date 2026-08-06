@@ -13,11 +13,19 @@
     {
       nixosConfigurations.junjiepc = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = { inherit self; };
+        specialArgs = { inherit self home-manager; };
         modules = [
-          home-manager.nixosModules.home-manager
           ./hosts/junjiepc
         ];
       };
+
+      homeConfigurations.junjie =
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
+          modules = [ ./home/junjie.nix ];
+        };
     };
 }

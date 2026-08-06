@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, home-manager, ... }:
 
 let
   sddmGreenleafTheme = pkgs.stdenvNoCC.mkDerivation {
@@ -123,6 +123,7 @@ in
   };
 
   environment.systemPackages = with pkgs; [
+    home-manager.packages.${pkgs.stdenv.hostPlatform.system}.default
     sddmGreenleafTheme
     ghostty
     google-chrome
@@ -157,18 +158,27 @@ in
     nix-output-monitor
   ];
 
-  home-manager = {
-    useGlobalPkgs = true;
-    useUserPackages = true;
-    users.junjie = import ../../home/junjie.nix;
-  };
-
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
+    auto-optimise-store = true;
     substituters = [
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
     ];
+  };
+
+  # Pass the desktop proxy to builds executed by nix-daemon.
+  systemd.services.nix-daemon.environment = {
+    HTTP_PROXY = "http://127.0.0.1:7890";
+    HTTPS_PROXY = "http://127.0.0.1:7890";
+    ALL_PROXY = "http://127.0.0.1:7890";
+    NO_PROXY = "localhost,127.0.0.1,::1";
+  };
+
+  nix.gc = {
+    automatic = true;
+    dates = "Sun 03:00";
+    options = "--delete-older-than 30d";
   };
 
   system.stateVersion = "25.11";
