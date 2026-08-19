@@ -7,9 +7,9 @@ location = "top"
 scale = 0.85
 padding = 0.25
 rounding = "sm"
-shadow = "drop"
+shadow = "none"
 bg = "bg-surface"
-background-opacity = 95
+background-opacity = 0
 button-variant = "block-prefix"
 button-rounding = "sm"
 
@@ -35,7 +35,7 @@ primary = "#e0947a"
 red = "#e46870"
 yellow = "#e0b870"
 green = "#68c898"
-blue = "#78a0e0"
+blue = "#68c898"
 
 [modules]
 custom = []
@@ -124,9 +124,9 @@ icon-unread = "ld-bell-dot-symbolic"
 icon-dnd = "ld-bell-off-symbolic"
 icon-show = true
 icon-color = "auto"
-icon-bg-color = "blue"
+icon-bg-color = "green"
 label-show = true
-label-color = "blue"
+label-color = "green"
 left-click = "dropdown:notification"
 right-click = "wayle notify dnd"
 
@@ -170,9 +170,9 @@ format = "{{ temp }}{{ temp_unit }}"
 time-format = "24h"
 icon-show = true
 icon-color = "auto"
-icon-bg-color = "blue"
+icon-bg-color = "green"
 label-show = true
-label-color = "blue"
+label-color = "green"
 left-click = "dropdown:weather"
 
 [modules.cpu]
@@ -187,9 +187,9 @@ label-color = "green"
 format = "{{ percent }}%"
 icon-show = true
 icon-color = "auto"
-icon-bg-color = "blue"
+icon-bg-color = "green"
 label-show = true
-label-color = "blue"
+label-color = "green"
 
 [modules.keyboard-input]
 format = "{{ alias }}"
@@ -218,9 +218,9 @@ right-click = "wayle idle toggle"
 format = "{{ down_auto }} {{ up_auto }}"
 icon-show = true
 icon-color = "auto"
-icon-bg-color = "blue"
+icon-bg-color = "green"
 label-show = true
-label-color = "blue"
+label-color = "green"
 
 [modules.keybind-mode]
 format = "{{ mode }}"

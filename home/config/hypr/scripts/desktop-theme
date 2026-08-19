@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+set -u
+
+mode="${1:-auto}"
+if [ "$mode" = "toggle" ]; then
+  state_file="${XDG_STATE_HOME:-$HOME/.local/state}/desktop-theme/current"
+  current=""
+  if [ -r "$state_file" ]; then
+    current="$(<"$state_file")"
+  fi
+  mode="$([ "$current" = "dark" ] && printf light || printf dark)"
+fi
+
+if [ "$mode" = "auto" ]; then
+  hour="$(date +%H)"
+  if [ "$hour" -ge 7 ] && [ "$hour" -lt 19 ]; then
+    mode="light"
+  else
+    mode="dark"
+  fi
+fi
+
+case "$mode" in
+  light)
+    active_border="rgb(0f766e)"
+    inactive_border="rgba(00000000)"
+    gtk_theme="Adwaita"
+    color_scheme="prefer-light"
+    palette=(
+      "bg #f6f7fb"
+      "surface #ffffff"
+      "elevated #eef1f6"
+      "fg #1f2937"
+      "fg-muted #64748b"
+      "primary #0f766e"
+      "red #dc2626"
+      "yellow #b45309"
+      "green #0f766e"
+      "blue #0f766e"
+    )
+    ;;
+  dark)
+    active_border="rgb(34d399)"
+    inactive_border="rgba(00000000)"
+    gtk_theme="Adwaita-dark"
+    color_scheme="prefer-dark"
+    palette=(
+      "bg #141820"
+      "surface #1d2430"
+      "elevated #283241"
+      "fg #e2e8f0"
+      "fg-muted #94a3b8"
+      "primary #34d399"
+      "red #fb7185"
+      "yellow #fbbf24"
+      "green #34d399"
+      "blue #34d399"
+    )
+    ;;
+  *)
+    echo "usage: desktop-theme [auto|light|dark|toggle]" >&2
+    exit 2
+    ;;
+esac
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/desktop-theme"
+mkdir -p "$state_dir"
+printf '%s\n' "$mode" > "$state_dir/current"
+
+# Systemd user timers may not inherit the graphical session's D-Bus address.
+# Point gsettings at the per-user bus so dconf updates the active desktop.
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -S "/run/user/$(id -u)/bus" ]; then
+  export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
+fi
+
+if command -v hyprctl >/dev/null 2>&1; then
+  hyprctl --batch "keyword general:col.active_border $active_border; keyword general:col.inactive_border $inactive_border" >/dev/null 2>&1 || true
+fi
+
+if command -v gsettings >/dev/null 2>&1; then
+  gsettings set org.gnome.desktop.interface color-scheme "$color_scheme" || true
+  gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" || true
+
+  # Keep failures visible in the journal instead of silently leaving stale GTK settings.
+  if [ "$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)" != "'$color_scheme'" ]; then
+    echo "desktop-theme: failed to apply GTK color scheme $color_scheme" >&2
+  fi
+fi
+
+if command -v hyprctl >/dev/null 2>&1; then
+  # Ghostty exposes config reload as Ctrl+Shift+,. Send it after updating the
+  # system theme so open terminals pick up the new color scheme immediately.
+  hyprctl dispatch sendshortcut "CTRL SHIFT,comma,class:^(com.mitchellh.ghostty)$" >/dev/null 2>&1 || true
+fi
+
+if command -v wayle >/dev/null 2>&1; then
+  for entry in "${palette[@]}"; do
+    key="${entry%% *}"
+    value="${entry#* }"
+    wayle config set "styling.palette.$key" "$value" >/dev/null 2>&1 || true
+  done
+
+  # Wayle reads palette values when its shell starts; restart its user unit
+  # after the runtime config update so the bar changes without a session restart.
+  systemctl --user restart wayle-shell.service >/dev/null 2>&1 || true
+fi
