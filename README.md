@@ -1,32 +1,32 @@
 # NixOS desktop configuration
 
-这是 `junjiepc` 的可复现 NixOS 配置，目标平台为 `x86_64-linux`。系统使用
-Hyprland/Wayland 作为桌面，SDDM 负责登录，Home Manager 管理用户级应用和配置。
+[中文文档](docs/README.zh-CN.md)
 
-## 特性
+This repository contains a reproducible NixOS configuration for the `junjiepc`
+host on `x86_64-linux`. It uses Hyprland/Wayland as the desktop, SDDM as the
+display manager, and Home Manager for user applications and dotfiles.
 
-- Flakes 管理系统构建和依赖，使用 `nixosConfigurations.junjiepc`
-- Hyprland（Lua 模块化配置）、Hyprlock、Hypridle 和 Wpaperd
-- Wayle 状态栏与下拉面板，包含工作区、媒体、通知、天气、内存、网络、音频和电源模块
-- 每天 07:00/19:00 自动切换亮暗桌面主题，并同步 GTK、Hyprland、Wayle 和 Ghostty
-- Fcitx5 中文输入法（Wayland frontend）
-- PipeWire 音频、蓝牙、NetworkManager、Docker 和 XDG Desktop Portal
-- SDDM Greenleaf 登录主题
-- Neovim、Lazygit、Himalaya、Firefox、Slack、Ghostty 等用户环境
+## Features
 
-## 快速使用
+- Flake-based system configuration with `nixosConfigurations.junjiepc`
+- Modular Hyprland Lua configuration, plus Hyprlock, Hypridle, and Wpaperd
+- Wayle status bar with workspace, media, notification, weather, memory, network, audio, and power modules
+- Automatic light/dark theme switching at 07:00 and 19:00 for GTK, Hyprland, Wayle, and Ghostty
+- Fcitx5 Chinese input method with the Wayland frontend
+- PipeWire audio, Bluetooth, NetworkManager, Docker, and XDG Desktop Portal
+- Greenleaf SDDM login theme
+- Neovim, Lazygit, Himalaya, Firefox, Slack, Ghostty, and other user applications
 
-在仓库根目录执行：
+## Quick Start
+
+Run from the repository root:
 
 ```sh
-# 查看配置（不切换系统）
 nix flake check
-
-# 应用系统和 Home Manager 配置
 sudo nixos-rebuild switch --flake .#junjiepc
 ```
 
-切换主题：
+Switch the desktop theme manually:
 
 ```sh
 ~/.config/hypr/scripts/desktop-theme light
@@ -34,33 +34,36 @@ sudo nixos-rebuild switch --flake .#junjiepc
 ~/.config/hypr/scripts/desktop-theme toggle
 ```
 
-主题脚本会更新 GTK 的 `color-scheme`/`gtk-theme`、Hyprland 活动边框、Wayle
-调色板，并重启 Wayle shell。Firefox 和 Slack 等应用通常需要完全退出后重新打开
-才会读取新的主题；Slack 还可能需要在应用设置中重新切换一次“跟随系统”。
+The theme script updates GTK, Hyprland borders, Wayle colors, and open
+Ghostty windows. Firefox and Slack may need to be fully restarted before they
+pick up a new theme; Slack may also require toggling “Follow system” once.
 
-## 目录结构
+## Repository Layout
 
 ```text
-flake.nix                  flake 入口和 nixosConfigurations
-hosts/junjiepc/            主机级 NixOS 配置
-home/junjie.nix            Home Manager 用户配置和软件包
-home/config/hypr/          Hyprland Lua 配置、脚本和测试
-home/config/wayle/         状态栏配置、主题和运行时配置
-home/config/ghostty/       Ghostty 终端配置
-home/config/nvim/          Neovim 配置
-home/config/wpaperd/       壁纸服务配置和壁纸资源
-sddm-theme-greenleaf/      本地 SDDM 主题源
-docs/install.md            从零安装指南
+flake.nix                  Flake entry point and NixOS outputs
+hosts/junjiepc/            Host-level NixOS configuration
+home/junjie.nix            Home Manager configuration and user packages
+home/config/hypr/          Hyprland Lua modules, scripts, and tests
+home/config/wayle/         Wayle bar, themes, and runtime configuration
+home/config/ghostty/       Ghostty terminal configuration
+home/config/nvim/          Neovim configuration
+home/config/wpaperd/       Wallpaper service configuration and assets
+sddm-theme-greenleaf/      Local SDDM theme source
+docs/install.md            English installation guide
+docs/install.zh-CN.md      Chinese installation guide
 ```
 
-`hosts/junjiepc/hardware-configuration.nix` 由目标机器生成，不应手工复制到
-其他机器。Hyprland 的 `home/config/hypr/modules/local.lua` 是可选的本机显示器和
-蓝牙覆盖配置，默认不纳入 Git。
+`hosts/junjiepc/hardware-configuration.nix` is generated for the target
+machine and should not be copied to another host. The optional
+`home/config/hypr/modules/local.lua` file contains machine-specific monitor
+and Bluetooth overrides and is ignored by Git.
 
-## 首次安装
+## Fresh Installation
 
-完整的 UEFI 分区、挂载、硬件配置生成和首次启动步骤见
-[`docs/install.md`](docs/install.md)。最小流程如下：
+See [`docs/install.md`](docs/install.md) for the complete UEFI partitioning,
+mounting, hardware generation, and first-boot procedure. The essential commands
+are:
 
 ```sh
 sudo nixos-generate-config --root /mnt
@@ -69,33 +72,30 @@ sudo nixos-install --flake .#junjiepc
 sudo nixos-enter --root /mnt -c 'passwd junjie'
 ```
 
-首次启动后进入仓库目录，再执行一次 `nixos-rebuild switch`。如果硬件配置不在
-默认路径，可以先将它放入 `hosts/junjiepc/hardware-configuration.nix`；该文件存在
-时会由主机模块自动导入。
+After the first boot, enter the checkout and run `nixos-rebuild switch` again.
 
-## 修改与验证
+## Changes and Validation
 
-修改 Hyprland 配置后运行：
+After changing Hyprland configuration, run:
 
 ```sh
 home/config/hypr/scripts/verify-config
 ```
 
-它会检查 Lua/Hyprland 配置并运行 workspace group 测试。修改 Nix 或 TOML 后建议
-分别运行：
+For Nix or TOML changes, also run:
 
 ```sh
-nix flake check
-git diff --check
+nix flake check && git diff --check
 ```
 
-Wayle 的 `runtime.toml` 用于保存运行时生成的工作区过滤设置；不要把运行时状态
-手工复制回主配置。天气模块使用 `WEATHERAPI_KEY`，未设置该变量时天气模块可能
-无法获取数据，但不会影响系统构建。
+Wayle's `runtime.toml` stores runtime workspace filters; do not copy runtime
+state back into the main configuration. The weather module uses
+`WEATHERAPI_KEY`; without it, weather data may be unavailable but the system
+can still build.
 
-## 许可证和本地资源
+## License and Local Assets
 
-仓库中的 Greenleaf SDDM 主题包含独立的许可证和资源说明，见
-[`sddm-theme-greenleaf/README.md`](sddm-theme-greenleaf/README.md)。壁纸属于本地
-资源，不保证在其他机器上存在；部署到新机器时请替换或清理
-`home/config/wpaperd/wallpapers/` 中的文件。
+The Greenleaf SDDM theme has its own license and resource notes in
+[`sddm-theme-greenleaf/README.md`](sddm-theme-greenleaf/README.md). Wallpapers
+are local assets and may need to be replaced or removed from
+`home/config/wpaperd/wallpapers/` on another machine.
