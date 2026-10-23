@@ -1,6 +1,22 @@
-{ config, pkgs, lib, llm-agents, ... }:
+{ config, pkgs, lib, llm-agents, omni-code, omni-code-bridge, ... }:
 
+let
+  desktopThemeScript = "${pkgs.bash}/bin/bash ${config.xdg.configHome}/hypr/scripts/desktop-theme";
+  gsettingsSchemaDir = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
+  opencode2Package = llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode2;
+  opencodeV2 = pkgs.symlinkJoin {
+    name = "opencode-${opencode2Package.version}";
+    paths = [ opencode2Package ];
+    postBuild = ''
+      ln -s opencode2 "$out/bin/opencode"
+    '';
+  };
+in
 {
+  imports = [
+    omni-code-bridge.homeManagerModules.default
+  ];
+
   home.username = "junjie";
   home.homeDirectory = "/home/junjie";
   home.stateVersion = "25.11";
@@ -136,17 +152,29 @@
     llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.cc-switch-cli
     himalaya
     lazygit
+    sentry-cli
     neovim
+    kitty
+    go
+    omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code
     pass
     gnupg
     pinentry-curses
     fzf
+    fd
+    stylua
+    lua-language-server
+    prettier
+    python3Packages.black
+    python3Packages.isort
     slack
     vim
     localsend
     codex
+    spec-kit
+    openspec
     claude-code
-    opencode
+    opencodeV2
     pi-coding-agent
     wechat
     telegram-desktop
@@ -154,6 +182,7 @@
     rustup
     cargo-watch
     gcc
+    gnumake
     tree-sitter
     pkg-config
     patchelf
@@ -167,6 +196,7 @@
     nodejs
     yarn
     pnpm
+    redocly
     # Flutter Linux desktop build dependencies
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
@@ -191,9 +221,28 @@
     espeak-ng
   ];
 
+  services.omni-code-bridge = {
+    enable = true;
+    agentPackages = with pkgs; [
+      codex
+      claude-code
+      opencodeV2
+      pi-coding-agent
+    ];
+  };
+
+  # The upstream module currently uses the NixOS-only `path = [ packages ]`
+  # service option. Home Manager expects an attribute set there, so provide the
+  # equivalent runtime PATH explicitly.
+  systemd.user.services.omni-code-bridge = {
+    path = lib.mkForce { };
+    Service.Environment = lib.mkAfter [
+      "PATH=${lib.makeBinPath [ pkgs.codex pkgs.claude-code opencodeV2 pkgs.pi-coding-agent pkgs.git pkgs.bash pkgs.coreutils ]}:/run/wrappers/bin:/run/current-system/sw/bin"
+    ];
+  };
+
   xdg.enable = true;
   home.sessionVariables = {
-    LD_LIBRARY_PATH = lib.makeLibraryPath [ pkgs.libuuid.lib ];
     PKG_CONFIG_PATH = "${config.home.profileDirectory}/lib/pkgconfig";
     HTTP_PROXY = "http://127.0.0.1:7890";
     HTTPS_PROXY = "http://127.0.0.1:7890";
@@ -258,7 +307,8 @@
     Unit.Description = "Apply the light desktop theme";
     Service = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash ${config.xdg.configHome}/hypr/scripts/desktop-theme light";
+      Environment = [ "GSETTINGS_SCHEMA_DIR=${gsettingsSchemaDir}" ];
+      ExecStart = "${desktopThemeScript} light";
     };
   };
 
@@ -275,7 +325,8 @@
     Unit.Description = "Apply the dark desktop theme";
     Service = {
       Type = "oneshot";
-      ExecStart = "${pkgs.bash}/bin/bash ${config.xdg.configHome}/hypr/scripts/desktop-theme dark";
+      Environment = [ "GSETTINGS_SCHEMA_DIR=${gsettingsSchemaDir}" ];
+      ExecStart = "${desktopThemeScript} dark";
     };
   };
 
@@ -286,19 +337,6 @@
       Persistent = true;
     };
     Install.WantedBy = [ "timers.target" ];
-  };
-
-  systemd.user.services.wayle-shell = {
-    Unit = {
-      Description = "Wayle desktop shell";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
-    };
-    Service = {
-      ExecStart = "${pkgs.wayle}/bin/wayle shell";
-      Restart = "on-failure";
-      RestartSec = 2;
-    };
   };
 
   home.file.".local/share/applications/org.telegram.desktop.desktop".text = ''
@@ -334,7 +372,11 @@
 
   services.gpg-agent = {
     enable = true;
-    pinentry.package = pkgs.pinentry-curses;
+    # Use a graphical prompt in the desktop session; pinentry-curses remains
+    # installed above for SSH or other non-graphical sessions.
+    pinentry.package = pkgs.pinentry-qt;
+    defaultCacheTtl = 14 * 60 * 60;
+    maxCacheTtl = 72 * 60 * 60;
   };
 
 }

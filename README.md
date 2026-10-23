@@ -38,6 +38,13 @@ The theme script updates GTK, Hyprland borders, Wayle colors, and open
 Ghostty windows. Firefox and Slack may need to be fully restarted before they
 pick up a new theme; Slack may also require toggling “Follow system” once.
 
+The GitHub Actions runner package is installed and can be checked with
+`Runner.Listener --version`. The `services.github-runners.junjiepc` entry in
+`hosts/junjiepc/default.nix` remains disabled until registration is needed.
+To register it later, set `url` to the repository or organization URL, set
+`tokenFile` to a token file outside the repository and Nix store, and change
+`enable` to `true` before rebuilding.
+
 ## Repository Layout
 
 ```text

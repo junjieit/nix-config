@@ -1,11 +1,10 @@
 return {{
     "mason-org/mason-lspconfig.nvim",
-    opts = {
-        ensure_installed = {"lua_ls"}
-    },
+    opts = {},
     dependencies = {{
         "mason-org/mason.nvim",
         opts = {
+            PATH = "append",
             ui = {
                 icons = {
                     package_installed = "✓",
@@ -91,7 +90,7 @@ return {{
 }, {
     "stevearc/conform.nvim",
     dependencies = {"mason.nvim"},
-    lazy = true,
+    event = "BufWritePre",
     cmd = "ConformInfo",
     keys = {{
         "<leader>cf",
@@ -134,10 +133,8 @@ return {{
             },
             format_on_save = {
                 -- 启用时保存时自动格式化
-                lsp_fallback = true,
+                lsp_format = "fallback",
                 -- 如果有 LSP，使用 LSP 格式化
-                async = false,
-                -- 同步执行
                 timeout_ms = 500
                 -- 超时时间
             }
@@ -145,6 +142,9 @@ return {{
     end
 }, {
     "neovim/nvim-lspconfig",
+    config = function()
+        vim.lsp.enable("lua_ls")
+    end,
     keys = {{
         "gd",
         function()

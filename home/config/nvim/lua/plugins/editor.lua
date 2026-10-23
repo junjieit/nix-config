@@ -8,6 +8,6 @@ return {{
     opts = {}
 }, {
     "catgoose/nvim-colorizer.lua",
-    event = "User FilePost",
+    event = {"BufReadPost", "BufNewFile"},
     opts = {}
 }}

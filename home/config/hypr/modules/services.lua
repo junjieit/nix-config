@@ -25,4 +25,5 @@ return {
     { name = "synology-drive", command = "synology-drive autostart", binary = "synology-drive" },
     { name = "hypridle", command = "hypridle", binary = "hypridle" },
     { name = "clash-verge", command = "clash-verge", binary = "clash-verge" },
+    { name = "wayle", command = "wayle shell", binary = "wayle" },
 }

@@ -1,3 +1,15 @@
+local function project_root()
+  return vim.fs.root(0, ".git") or vim.uv.cwd()
+end
+
+local function telescope_picker(name, use_project_root)
+  return function()
+    require("telescope.builtin")[name]({
+      cwd = use_project_root and project_root() or vim.uv.cwd(),
+    })
+  end
+end
+
 return {
   {
     "folke/tokyonight.nvim",
@@ -93,8 +105,8 @@ return {
         end,
         offsets = {
           {
-            filetype = "neo-tree",
-            text = "Neo-tree",
+            filetype = "NvimTree",
+            text = "NvimTree",
             highlight = "Directory",
             text_align = "left",
           },
@@ -111,7 +123,9 @@ return {
       vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete" }, {
         callback = function()
           vim.schedule(function()
-            pcall(nvim_bufferline)
+            pcall(function()
+              require("bufferline.ui").refresh()
+            end)
           end)
         end,
       })
@@ -189,10 +203,10 @@ return {
             end,
           },
         },
+        extensions = { "nvim-tree", "lazy", "fzf" },
       }
       return opts
     end,
-    extensions = { "neo-tree", "lazy", "fzf" },
   },
   {
     "nvim-tree/nvim-tree.lua",
@@ -207,7 +221,7 @@ return {
       },
       {
         "<leader>/",
-        "<cmd>Telescope live_grep<cr>",
+        telescope_picker("live_grep", true),
         desc = "Grep (Root Dir)",
       },
       {
@@ -217,7 +231,7 @@ return {
       },
       {
         "<leader><space>",
-        "<cmd>Telescope find_files<cr>",
+        telescope_picker("find_files", true),
         desc = "Find Files (Root Dir)",
       }, -- find
       {
@@ -227,12 +241,12 @@ return {
       },
       {
         "<leader>ff",
-        "<cmd>Telescope find_files<cr>",
+        telescope_picker("find_files", true),
         desc = "Find Files (Root Dir)",
       },
       {
         "<leader>fF",
-        "<cmd>Telescope find_files root=false<cr>",
+        telescope_picker("find_files", false),
         desc = "Find Files (cwd)",
       },
       {
@@ -246,7 +260,8 @@ return {
         desc = "Recent",
       },
       {
-        "<cmd>Telescope oldfiles cwd=vim.uv.cwd()<cr>",
+        "<leader>fR",
+        telescope_picker("oldfiles", false),
         desc = "Recent (cwd)",
       }, -- git
       {
@@ -296,12 +311,12 @@ return {
       },
       {
         "<leader>sg",
-        "<cmd>Telescope live_grep<cr>",
+        telescope_picker("live_grep", true),
         desc = "Grep (Root Dir)",
       },
       {
         "<leader>sG",
-        "<cmd>Telescope live_grep root=false<cr>",
+        telescope_picker("live_grep", false),
         desc = "Grep (cwd)",
       },
       {

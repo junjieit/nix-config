@@ -2,9 +2,6 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- Hide deprecation warnings
-vim.g.deprecation_warnings = false
-
 -- disable netrw at the very start of your init.lua
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -27,7 +24,6 @@ opt.relativenumber = true
 opt.tabstop = 2
 opt.shiftwidth = 2
 opt.foldlevel = 99
-opt.formatexpr = "v:lua.require'lazyvim.util'.format.formatexpr()"
 opt.formatoptions = "jcroqlnt" -- tcqj
 opt.grepformat = "%f:%l:%c:%m"
 opt.grepprg = "rg --vimgrep"

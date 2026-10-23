@@ -68,6 +68,29 @@ state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/desktop-theme"
 mkdir -p "$state_dir"
 printf '%s\n' "$mode" > "$state_dir/current"
 
+# User systemd services do not always inherit the variables exported by
+# Hyprland. Discover the active instance from its runtime sockets so timer
+# invocations can still update Hyprland and reload open Ghostty windows.
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+  for instance_dir in "$runtime_dir"/hypr/*; do
+    if [ -d "$instance_dir" ]; then
+      HYPRLAND_INSTANCE_SIGNATURE="${instance_dir##*/}"
+      export HYPRLAND_INSTANCE_SIGNATURE
+      break
+    fi
+  done
+fi
+if [ -z "${WAYLAND_DISPLAY:-}" ]; then
+  for wayland_socket in "$runtime_dir"/wayland-*; do
+    if [ -S "$wayland_socket" ]; then
+      WAYLAND_DISPLAY="${wayland_socket##*/}"
+      export WAYLAND_DISPLAY
+      break
+    fi
+  done
+fi
+
 # Systemd user timers may not inherit the graphical session's D-Bus address.
 # Point gsettings at the per-user bus so dconf updates the active desktop.
 if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -S "/run/user/$(id -u)/bus" ]; then
@@ -101,7 +124,17 @@ if command -v wayle >/dev/null 2>&1; then
     wayle config set "styling.palette.$key" "$value" >/dev/null 2>&1 || true
   done
 
-  # Wayle reads palette values when its shell starts; restart its user unit
-  # after the runtime config update so the bar changes without a session restart.
-  systemctl --user restart wayle-shell.service >/dev/null 2>&1 || true
+  # Wayle reads its palette when the shell starts. Reload an existing bar only
+  # after the Wayland session is ready, keeping it out of the session startup
+  # transaction that previously made login unreliable.
+  if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] \
+    && [ -n "${WAYLAND_DISPLAY:-}" ] \
+    && pgrep -x wayle >/dev/null 2>&1; then
+    pkill -x wayle
+    for _ in $(seq 1 10); do
+      pgrep -x wayle >/dev/null 2>&1 || break
+      sleep 0.1
+    done
+    wayle shell >/dev/null 2>&1 &
+  fi
 fi

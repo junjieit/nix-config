@@ -37,6 +37,11 @@ sudo nixos-rebuild switch --flake .#junjiepc
 Firefox 和 Slack 可能需要完全退出后重新打开才能读取新主题；Slack 还可能需要在
 应用设置中重新切换一次“跟随系统”。
 
+配置包含 GitHub Actions runner 软件包，系统切换后可用 `Runner.Listener --version`
+检查。`hosts/junjiepc/default.nix` 中的 `services.github-runners.junjiepc` 暂时关闭；
+之后注册时，将 `url` 设为仓库或组织地址，将 `tokenFile` 指向仓库和 Nix store 之外
+保存的 token 文件，再将 `enable` 改为 `true` 并重新构建。
+
 ## 目录结构
 
 ```text

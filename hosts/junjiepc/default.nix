@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 
 let
-  androidSdk = (pkgs.androidenv.composeAndroidPackages {
+  androidBuildSdk = (pkgs.androidenv.composeAndroidPackages {
     platformVersions = [ "31" "34" "35" "36" ];
     buildToolsVersions = [ "35.0.0" "36.0.0" ];
     includeCmake = true;
@@ -11,6 +11,27 @@ let
     includeSystemImages = false;
     ndkVersions = [ "28.2.13676358" ];
   }).androidsdk;
+
+  androidEmulatorSdk = (pkgs.androidenv.composeAndroidPackages {
+    platformVersions = [ "35" ];
+    buildToolsVersions = [ ];
+    includeCmake = false;
+    includeEmulator = true;
+    includeNDK = false;
+    includeSystemImages = true;
+    systemImageTypes = [ "google_apis_playstore" ];
+    abiVersions = [ "x86_64" ];
+  }).androidsdk;
+
+  # Present both SDK compositions through one conventional SDK root.
+  androidSdk = pkgs.buildEnv {
+    name = "android-sdk";
+    # Keep the emulator composition first so colliding SDK management wrappers
+    # resolve against the SDK root that contains the system image.
+    paths = [ androidEmulatorSdk androidBuildSdk ];
+    pathsToLink = [ "/bin" "/libexec/android-sdk" ];
+    ignoreCollisions = true;
+  };
 
   sddmGreenleafTheme = pkgs.stdenvNoCC.mkDerivation {
     pname = "sddm-theme-greenleaf";
@@ -50,6 +71,23 @@ in
   services.upower.enable = true;
   services.power-profiles-daemon.enable = true;
 
+  # Enable registration after setting the repository/organization URL and token.
+  services.github-runners.junjiepc = {
+    enable = false;
+    name = config.networking.hostName;
+    extraLabels = [ "nixos" ];
+    extraPackages = with pkgs; [ git nix ];
+    # url = "https://github.com/OWNER/REPO";
+    # tokenFile = "/var/lib/github-runners/token";
+  };
+
+  # Compressed RAM swap absorbs short memory spikes without requiring a disk
+  # partition. It is not suitable for hibernation.
+  zramSwap = {
+    enable = true;
+    memoryPercent = 50;
+  };
+
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
   i18n.inputMethod = {
@@ -87,7 +125,7 @@ in
   users.users.junjie = {
     isNormalUser = true;
     description = "junjie";
-    extraGroups = [ "docker" "networkmanager" "wheel" ];
+    extraGroups = [ "docker" "networkmanager" "wheel" "video" "render" ];
     shell = pkgs.zsh;
   };
 
@@ -108,42 +146,49 @@ in
     maple-mono.NF-CN
   ];
   fonts.fontconfig.localConf = ''
-    <match target="pattern">
-      <test name="lang" compare="contains">
-        <string>zh-cn</string>
-      </test>
-      <test name="family" compare="eq">
-        <string>sans-serif</string>
-      </test>
-      <edit name="family" mode="prepend" binding="strong">
-        <string>Noto Sans CJK SC</string>
-      </edit>
-    </match>
-    <match target="pattern">
-      <test name="lang" compare="contains">
-        <string>zh-cn</string>
-      </test>
-      <test name="family" compare="eq">
-        <string>serif</string>
-      </test>
-      <edit name="family" mode="prepend" binding="strong">
-        <string>Noto Serif CJK SC</string>
-      </edit>
-    </match>
-    <match target="pattern">
-      <test name="lang" compare="contains">
-        <string>zh-cn</string>
-      </test>
-      <test name="family" compare="eq">
-        <string>monospace</string>
-      </test>
-      <edit name="family" mode="prepend" binding="strong">
-        <string>Noto Sans Mono CJK SC</string>
-      </edit>
-    </match>
+    <fontconfig>
+      <match target="pattern">
+        <test name="lang" compare="contains">
+          <string>zh-cn</string>
+        </test>
+        <test name="family" compare="eq">
+          <string>sans-serif</string>
+        </test>
+        <edit name="family" mode="prepend" binding="strong">
+          <string>Noto Sans CJK SC</string>
+        </edit>
+      </match>
+      <match target="pattern">
+        <test name="lang" compare="contains">
+          <string>zh-cn</string>
+        </test>
+        <test name="family" compare="eq">
+          <string>serif</string>
+        </test>
+        <edit name="family" mode="prepend" binding="strong">
+          <string>Noto Serif CJK SC</string>
+        </edit>
+      </match>
+      <match target="pattern">
+        <test name="lang" compare="contains">
+          <string>zh-cn</string>
+        </test>
+        <test name="family" compare="eq">
+          <string>monospace</string>
+        </test>
+        <edit name="family" mode="prepend" binding="strong">
+          <string>Noto Sans Mono CJK SC</string>
+        </edit>
+      </match>
+    </fontconfig>
   '';
 
   virtualisation.docker.enable = true;
+  virtualisation.waydroid = {
+    enable = true;
+    # This kernel omits legacy iptables, so use Waydroid's nftables helper.
+    package = pkgs.waydroid-nftables;
+  };
 
   # Docker pulls images as a system service, so it does not inherit the desktop proxy.
   systemd.services.docker.environment = {
@@ -162,17 +207,19 @@ in
     defaultSession = "hyprland-uwsm";
     sddm = {
       enable = true;
-      wayland.enable = true;
+      wayland.enable = false;
+      autoNumlock = true;
       theme = "greenleaf";
       extraPackages = [
         pkgs.kdePackages.qt5compat
         pkgs.kdePackages.qtvirtualkeyboard
       ];
-      settings.General = {
-        Numlock = "on";
-      };
     };
   };
+
+  # Use X11 only for the greeter. SDDM's Weston-based Wayland greeter does
+  # not reliably create a login surface on every output or honor Num Lock.
+  services.xserver.enable = true;
 
   security.polkit.enable = true;
   security.rtkit.enable = true;
@@ -183,6 +230,10 @@ in
   '';
 
   hardware.graphics.enable = true;
+  hardware.graphics.extraPackages = with pkgs; [
+    rocmPackages.clr
+    rocmPackages.clr.icd
+  ];
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -201,9 +252,10 @@ in
   environment.sessionVariables = {
     ANDROID_HOME = "${androidSdk}/libexec/android-sdk";
     ANDROID_SDK_ROOT = "${androidSdk}/libexec/android-sdk";
+    ANDROID_AVD_HOME = "${config.users.users.junjie.home}/.config/.android/avd";
     JAVA_HOME = "${pkgs.jdk17}";
-    # Keep every application on Fcitx's native Wayland input-method path.
-    GTK_IM_MODULE = "fcitx";
+    # GTK uses Fcitx's Wayland frontend directly; setting GTK_IM_MODULE here
+    # triggers an unnecessary fallback warning at session startup.
     QT_IM_MODULE = "fcitx";
     SDL_IM_MODULE = "fcitx";
     GLFW_IM_MODULE = "ibus";
@@ -214,6 +266,8 @@ in
   };
 
   environment.systemPackages = with pkgs; [
+    rocmPackages.rocminfo
+    rocmPackages.rocm-smi
     androidSdk
     jdk17
     sddmGreenleafTheme
@@ -237,12 +291,14 @@ in
     wl-clipboard
     brightnessctl
     jq
+    unzip
     mpc
     mpd
     udiskie
     lxqt.lxqt-policykit
     pass
     git
+    github-runner
     docker-compose
     ripgrep
     htop
@@ -253,6 +309,7 @@ in
     xdg-desktop-portal-hyprland
     nix-output-monitor
     devenv
+    zeroclaw
   ];
 
   nix.settings = {
