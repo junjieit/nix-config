@@ -159,11 +159,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1790129850,
-        "narHash": "sha256-B2+iKcSrXbSu3gxgaEEDdGZoW/47ZPz5vbg2JhA3UUw=",
-        "ref": "refs/heads/main",
-        "rev": "fe7161a2342b968ab2eca42406850ccdf7cb62d7",
-        "revCount": 151,
+        "lastModified": 1792769563,
+        "narHash": "sha256-g5WxpY03nQqG8wevgGjIc5FwQvjzIBlF3A4Qs0n92t4=",
+        "ref": "refs/heads/feat/x11box-acceptance",
+        "rev": "4806ec51f9dbfb8c5c35710b647dd86188976e38",
+        "revCount": 161,
         "type": "git",
         "url": "file:///data/code/code/omni-code"
       },
@@ -181,11 +181,11 @@
         "pi-agent-rust": "pi-agent-rust"
       },
       "locked": {
-        "lastModified": 1789054769,
-        "narHash": "sha256-hh3rmTqCZUR+T31lIvfcEO9xpxpBPzix0uXT8fyjvsQ=",
-        "ref": "refs/heads/main",
-        "rev": "25e2f7d06821080ed8cdd23053ad829abee2238d",
-        "revCount": 110,
+        "lastModified": 1792769563,
+        "narHash": "sha256-1bm7NlMr7dsUA+2DVqlAsIX/R+ke7le5XmF9E4AQgkU=",
+        "ref": "refs/heads/feat/x11box-acceptance",
+        "rev": "163dfc65393bfb01a4e0b632817f5646d6b8d74e",
+        "revCount": 120,
         "type": "git",
         "url": "file:///data/code/code/omni-code-bridge"
       },

@@ -1,6 +1,27 @@
 { config, pkgs, lib, llm-agents, omni-code, omni-code-bridge, ... }:
 
 let
+  omniCode = omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code.override {
+    flutter = pkgs.flutter // {
+      # Use the source lockfile instead of the stale upstream JSON copy.
+      buildFlutterApplication = args: pkgs.flutter.buildFlutterApplication (
+        builtins.removeAttrs args [ "pubspecLock" ] // {
+          autoPubspecLock = omni-code.outPath + "/pubspec.lock";
+        }
+      );
+    };
+  };
+  omniCodeBridge = omni-code-bridge.packages.${pkgs.stdenv.hostPlatform.system}.omni-code-bridge.overrideAttrs (old: {
+    nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.git ];
+    cargoDeps = pkgs.rustPlatform.importCargoLock {
+      # Match upstream's local pi_agent_rust path while using the source lockfile.
+      lockFileContents = lib.concatStringsSep "\n" (
+        lib.filter
+          (line: !(lib.hasPrefix "source = \"git+https://github.com/omni-stream-ai/pi_agent_rust?" line))
+          (lib.splitString "\n" (builtins.readFile (omni-code-bridge.outPath + "/Cargo.lock")))
+      );
+    };
+  });
   desktopThemeScript = "${pkgs.bash}/bin/bash ${config.xdg.configHome}/hypr/scripts/desktop-theme";
   gsettingsSchemaDir = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
   opencode2Package = llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode2;
@@ -156,7 +177,7 @@ in
     neovim
     kitty
     go
-    omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code
+    omniCode
     pass
     gnupg
     pinentry-curses
@@ -223,6 +244,7 @@ in
 
   services.omni-code-bridge = {
     enable = true;
+    package = omniCodeBridge;
     agentPackages = with pkgs; [
       codex
       claude-code
