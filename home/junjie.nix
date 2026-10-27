@@ -189,8 +189,10 @@ in
     python3Packages.black
     python3Packages.isort
     slack
+    obsidian
     vim
     localsend
+    tigervnc
     codex
     spec-kit
     openspec

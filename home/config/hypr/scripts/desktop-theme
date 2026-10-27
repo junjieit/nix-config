@@ -3,6 +3,7 @@
 set -u
 
 mode="${1:-auto}"
+auto_mode=0
 if [ "$mode" = "toggle" ]; then
   state_file="${XDG_STATE_HOME:-$HOME/.local/state}/desktop-theme/current"
   current=""
@@ -13,6 +14,7 @@ if [ "$mode" = "toggle" ]; then
 fi
 
 if [ "$mode" = "auto" ]; then
+  auto_mode=1
   hour="$(date +%H)"
   if [ "$hour" -ge 7 ] && [ "$hour" -lt 19 ]; then
     mode="light"
@@ -98,12 +100,23 @@ if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ] && [ -S "/run/user/$(id -u)/bus" ]; th
 fi
 
 if command -v hyprctl >/dev/null 2>&1; then
-  hyprctl --batch "keyword general:col.active_border $active_border; keyword general:col.inactive_border $inactive_border" >/dev/null 2>&1 || true
+  # Hyprland's start hook can run before its control socket is ready.
+  for _ in $(seq 1 20); do
+    if hyprctl --batch "keyword general:col.active_border $active_border; keyword general:col.inactive_border $inactive_border" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
 fi
 
 if command -v gsettings >/dev/null 2>&1; then
-  gsettings set org.gnome.desktop.interface color-scheme "$color_scheme" || true
-  gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" || true
+  for _ in $(seq 1 20); do
+    if gsettings set org.gnome.desktop.interface color-scheme "$color_scheme" >/dev/null 2>&1 \
+      && gsettings set org.gnome.desktop.interface gtk-theme "$gtk_theme" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
 
   # Keep failures visible in the journal instead of silently leaving stale GTK settings.
   if [ "$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)" != "'$color_scheme'" ]; then
@@ -127,6 +140,15 @@ if command -v wayle >/dev/null 2>&1; then
   # Wayle reads its palette when the shell starts. Reload an existing bar only
   # after the Wayland session is ready, keeping it out of the session startup
   # transaction that previously made login unreliable.
+  # Startup commands are launched in parallel. Give Wayle a moment to appear
+  # before restarting it so the initial bar cannot keep the default dark palette.
+  if [ "$auto_mode" -eq 1 ]; then
+    for _ in $(seq 1 50); do
+      pgrep -x wayle >/dev/null 2>&1 && break
+      sleep 0.1
+    done
+  fi
+
   if [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ] \
     && [ -n "${WAYLAND_DISPLAY:-}" ] \
     && pgrep -x wayle >/dev/null 2>&1; then

@@ -1,12 +1,12 @@
 local function desktop_theme()
-    local state_root = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
-    local state_file = io.open(state_root .. "/desktop-theme/current", "r")
-    if not state_file then
-        return "dark"
+    -- The saved state can belong to the previous session. Resolve the initial
+    -- compositor appearance from the current local hour; the startup script
+    -- then persists the same choice and updates GTK/Wayle.
+    local hour = tonumber(os.date("%H"))
+    if hour and hour >= 7 and hour < 19 then
+        return "light"
     end
-    local theme = state_file:read("*l")
-    state_file:close()
-    return theme == "light" and "light" or "dark"
+    return "dark"
 end
 
 local active_border, inactive_border
