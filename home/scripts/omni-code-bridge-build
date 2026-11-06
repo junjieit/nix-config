@@ -1,0 +1,27 @@
+project=/data/code/code/omni-code-bridge
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omni-code-bridge-build"
+mkdir -p "$state_dir"
+exec 8>"$state_dir/build.lock"
+if ! flock -n 8; then
+  notify-send --app-name="Omni Code Bridge" "Bridge 正在编译" "请等待当前构建完成。" || true
+  exit 1
+fi
+
+cd "$project"
+printf '正在编译本地 Bridge（release）…\n日志：%s\n\n' "$state_dir/build.log"
+status=0
+if nix develop --no-update-lock-file "$project" --command \
+  cargo build --locked --release --bin omni-code-bridge --target-dir "$project/target" 2>&1 | tee "$state_dir/build.log"; then
+  printf '\n编译成功，正在切换并重启 Bridge…\n'
+  OMNI_CODE_BRIDGE_BINARY="$project/target/release/omni-code-bridge" \
+    omni-code-bridge-switch local || status=1
+else
+  status=1
+  printf '\n编译失败，未切换或重启服务。日志：%s\n' "$state_dir/build.log" >&2
+  notify-send --app-name="Omni Code Bridge" --urgency=critical \
+    "Bridge 编译失败" "当前服务保持运行，请查看构建窗口。" || true
+fi
+if [[ -t 0 ]]; then
+  read -r -p "按回车关闭窗口…" _ || true
+fi
+exit "$status"

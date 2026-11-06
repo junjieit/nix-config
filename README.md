@@ -45,6 +45,47 @@ To register it later, set `url` to the repository or organization URL, set
 `tokenFile` to a token file outside the repository and Nix store, and change
 `enable` to `true` before rebuilding.
 
+## Memory pressure protection
+
+The host uses zram swap sized to 50% of RAM, plus a 16 GiB disk swap file at
+`/var/lib/swapfile`, created automatically when the configuration is applied.
+The disk swap has priority 0, below zram's default priority of 5. It reserves
+16 GiB on the root filesystem; check active swap with `swapon --show`.
+`systemd-oomd` monitors system
+services and applications below each user manager. It terminates an eligible
+application or service group after memory pressure stays above 50% for users
+or 60% for system services for 10 seconds. These are memory stall thresholds,
+not percentages of RAM used. Terminated applications can lose unsaved work.
+
+After rebuilding, inspect coverage with `oomctl` and termination logs with
+`journalctl -b -u systemd-oomd`. This reduces the risk of memory pressure
+freezes; it does not diagnose GPU or other causes of lockups.
+
+## Local Omni Code launchers
+
+Win+D includes `Omni Code 打包 Release`, which opens a terminal to build the local
+project with `nix develop --no-update-lock-file --command flutter build linux --release`.
+The log is saved to `~/.local/state/omni-code-build/release.log`. Press Enter
+to close the terminal after the build. `Omni Code 本地版` launches only
+`/data/code/code/omni-code/build/linux/x64/release/bundle`, without a debug fallback.
+
+`Omni Code Bridge 本地版` and `Omni Code Bridge 恢复原配置` remain available.
+The local bridge entry opens a terminal, builds the release binary with
+`cargo build --locked --release` in the project's Nix development shell, then switches
+and restarts the service only if compilation succeeds. Logs are saved to
+`~/.local/state/omni-code-bridge-build/build.log`. It uses
+`/data/code/code/omni-code-bridge/target/release/omni-code-bridge`.
+
+Switching the bridge restarts its user service. A failed switch restores the
+previous configuration. Restore removes only the launcher's own drop-in and
+keeps existing overrides, including `90-desktop-input.conf`.
+
+The same actions are available as `omni-code-build-release`, `omni-code-local`,
+`omni-code-bridge-build`, and
+`omni-code-bridge-switch local|restore`. `omni-code-local --check` prints the
+selected executable. Set `OMNI_CODE_LOCAL_BUNDLE` to select a frontend bundle or
+`OMNI_CODE_BRIDGE_BINARY` to select another bridge executable.
+
 ## Repository Layout
 
 ```text

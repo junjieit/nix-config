@@ -61,8 +61,8 @@ in
   networking.hostName = "junjiepc";
   networking.networkmanager.enable = true;
   networking.firewall = {
-    allowedTCPPorts = [ 8787 53317 ];
-    allowedUDPPorts = [ 53317 ];
+    allowedTCPPorts = [ 7890 8787 53317 ];
+    allowedUDPPorts = [ 7890 53317 ];
   };
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -86,6 +86,31 @@ in
   zramSwap = {
     enable = true;
     memoryPercent = 50;
+  };
+
+  # Disk-backed overflow after zram (whose default priority is 5).
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 16 * 1024; # MiB
+      priority = 0;
+    }
+  ];
+
+  # Enabling the daemon alone does not monitor the desktop or system services.
+  # React to sustained reclaim stalls before the desktop becomes unresponsive.
+  systemd.oomd = {
+    enable = true;
+    enableSystemSlice = true;
+    settings.OOM.DefaultMemoryPressureDurationSec = "10s";
+  };
+  systemd.slices.system.sliceConfig.ManagedOOMMemoryPressureLimit = "60%";
+
+  # Monitor applications below each user manager, rather than making the
+  # entire user manager a kill candidate by monitoring user.slice.
+  systemd.services."user@".serviceConfig = {
+    ManagedOOMMemoryPressure = "kill";
+    ManagedOOMMemoryPressureLimit = "50%";
   };
 
   time.timeZone = "Asia/Shanghai";

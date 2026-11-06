@@ -1,0 +1,16 @@
+# Open the release bundle produced by the separate build launcher.
+bundle="${OMNI_CODE_LOCAL_BUNDLE:-/data/code/code/omni-code/build/linux/x64/release/bundle}"
+
+if [[ -z "$bundle" || ! -x "$bundle/omni_code" ]]; then
+  notify-send --app-name="Omni Code" --urgency=critical \
+    "找不到本地 Release 应用" "请先从 Win+D 运行 Omni Code 打包 Release。" || true
+  exit 1
+fi
+
+if [[ "${1:-}" == --check ]]; then
+  printf '%s\n' "$bundle/omni_code"
+  exit 0
+fi
+
+cd "$bundle"
+exec "$bundle/omni_code" "$@"

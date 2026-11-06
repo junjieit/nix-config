@@ -42,6 +42,43 @@ Firefox 和 Slack 可能需要完全退出后重新打开才能读取新主题�
 之后注册时，将 `url` 设为仓库或组织地址，将 `tokenFile` 指向仓库和 Nix store 之外
 保存的 token 文件，再将 `enable` 改为 `true` 并重新构建。
 
+## 内存压力保护
+
+主机使用容量为物理内存 50% 的 zram swap，并在应用配置时自动创建
+16 GiB 的磁盘交换文件 `/var/lib/swapfile`。磁盘 swap 优先级为 0，低于 zram
+默认的 5，作为额外缓冲；它会占用根分区 16 GiB 空间。使用 `swapon --show`
+查看已启用的交换空间。`systemd-oomd` 监控系统服务和每个
+用户管理器下的应用：用户内存压力持续超过 50%、系统服务持续超过 60%，达到
+10 秒后，会选择符合条件的应用或服务进程组终止。这些百分比指内存等待压力，
+不是内存使用率；被终止的应用可能丢失未保存内容。
+
+重新构建后，使用 `oomctl` 检查监控范围，使用
+`journalctl -b -u systemd-oomd` 查看终止记录。这能降低内存压力导致卡死的风险，
+但不能排除显卡或其他原因造成的死机。
+
+## 本地 Omni Code 入口
+
+Win+D 中的 `Omni Code 打包 Release` 会打开终端，在本地项目中运行
+`nix develop --no-update-lock-file --command flutter build linux --release`。
+日志保存在 `~/.local/state/omni-code-build/release.log`，构建结束后按回车关闭窗口。
+`Omni Code 本地版` 固定启动
+`/data/code/code/omni-code/build/linux/x64/release/bundle`，不会回退到 debug 版本。
+
+`Omni Code Bridge 本地版` 和 `Omni Code Bridge 恢复原配置` 入口保持可用。
+Bridge 本地版入口会打开终端，在项目的 Nix 开发环境中执行
+`cargo build --locked --release`，成功后才切换并重启服务；编译失败时保留当前服务。
+启动文件为 `/data/code/code/omni-code-bridge/target/release/omni-code-bridge`。
+日志保存在 `~/.local/state/omni-code-bridge-build/build.log`。
+
+切换 bridge 会重启用户服务；失败时自动恢复之前的配置。恢复入口只移除本启动器
+创建的覆盖文件，保留 `90-desktop-input.conf` 等原有覆盖配置。
+
+也可以运行 `omni-code-build-release`、`omni-code-local`、`omni-code-bridge-build`、
+`omni-code-bridge-switch local` 或
+`omni-code-bridge-switch restore`。`omni-code-local --check` 显示选中的前端可执行文件。
+通过 `OMNI_CODE_LOCAL_BUNDLE` 可以指定其他前端 bundle，
+通过 `OMNI_CODE_BRIDGE_BINARY` 可以指定其他 bridge 可执行文件。
+
 ## 目录结构
 
 ```text

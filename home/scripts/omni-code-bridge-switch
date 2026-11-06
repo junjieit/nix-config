@@ -1,0 +1,108 @@
+action="${1:-}"
+case "$action" in
+  local|restore) ;;
+  *) printf 'Usage: omni-code-bridge-switch local|restore\n' >&2; exit 2 ;;
+esac
+
+unit="${OMNI_CODE_BRIDGE_UNIT:-omni-code-bridge.service}"
+if [[ ! "$unit" =~ ^[a-zA-Z0-9_.@-]+\.service$ ]]; then
+  printf 'Invalid service name: %s\n' "$unit" >&2
+  exit 2
+fi
+binary="${OMNI_CODE_BRIDGE_BINARY:-/data/code/code/omni-code-bridge/target/release/omni-code-bridge}"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omni-code-bridge-switch"
+dropin_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/$unit.d"
+override="$dropin_dir/99-omni-code-local.conf"
+mkdir -p "$state_dir"
+exec 9>"$state_dir/$unit.lock"
+
+notify() {
+  printf '%s\n' "$2"
+  if [[ "${OMNI_CODE_QUIET:-0}" != 1 ]]; then
+    notify-send --app-name="Omni Code Bridge" --urgency="$1" \
+      "Omni Code Bridge" "$2" >/dev/null 2>&1 || true
+  fi
+}
+
+if ! flock -n 9; then
+  notify normal "Bridge 正在切换，请稍候。"
+  exit 1
+fi
+
+if [[ "$action" == local && ( "$binary" != /* || ! -x "$binary" ) ]]; then
+  notify critical "找不到本地 Bridge：$binary"
+  exit 1
+fi
+if [[ "$action" == restore && ! -e "$override" ]]; then
+  notify normal "Bridge 已在使用原配置。"
+  exit 0
+fi
+if ! systemctl --user cat "$unit" >/dev/null 2>&1; then
+  notify critical "找不到用户服务：$unit"
+  exit 1
+fi
+
+backup="$(mktemp "$state_dir/previous.XXXXXX")"
+temporary=""
+had_override=0
+was_active=0
+systemctl --user is-active --quiet "$unit" && was_active=1
+trap 'rm -f -- "$backup" "$temporary"' EXIT
+if [[ -e "$override" ]]; then
+  cp -- "$override" "$backup"
+  had_override=1
+fi
+
+if [[ "$action" == local ]]; then
+  mkdir -p "$dropin_dir"
+  temporary="$(mktemp "$dropin_dir/.99-omni-code-local.XXXXXX")"
+  # Quote the executable for systemd and escape its specifier character.
+  escaped="${binary//\\/\\\\}"
+  escaped="${escaped//\"/\\\"}"
+  escaped="${escaped//%/%%}"
+  printf '[Service]\nExecStartPre=\nExecStartPre="%s" settings-validate\nExecStart=\nExecStart="%s" serve\n' \
+    "$escaped" "$escaped" >"$temporary"
+  chmod 644 "$temporary"
+  mv -f -- "$temporary" "$override"
+else
+  rm -- "$override"
+fi
+
+log="$state_dir/$unit.log"
+restart_service() {
+  systemctl --user daemon-reload &&
+    systemctl --user reset-failed "$unit" &&
+    systemctl --user restart "$unit" &&
+    sleep 1 &&
+    systemctl --user is-active --quiet "$unit"
+}
+
+if restart_service >"$log" 2>&1; then
+  if [[ "$action" == local ]]; then
+    notify normal "已切换到本地 Bridge，服务已重启。"
+  else
+    notify normal "已恢复 Bridge 原配置，服务已重启。"
+  fi
+  exit 0
+fi
+
+# A failed validation/start must leave the previous configuration usable.
+if [[ "$had_override" == 1 ]]; then
+  cp -- "$backup" "$override"
+else
+  rm -f -- "$override"
+fi
+if {
+  systemctl --user daemon-reload &&
+    systemctl --user reset-failed "$unit" &&
+    if [[ "$was_active" == 1 ]]; then
+      systemctl --user restart "$unit"
+    else
+      systemctl --user stop "$unit"
+    fi
+} >>"$log" 2>&1; then
+  notify critical "切换失败，已恢复之前的配置。日志：$log"
+else
+  notify critical "切换失败，原配置已还原；请检查服务状态。日志：$log"
+fi
+exit 1

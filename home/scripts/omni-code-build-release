@@ -1,0 +1,24 @@
+project=/data/code/code/omni-code
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/omni-code-build"
+mkdir -p "$state_dir"
+exec 9>"$state_dir/release.lock"
+if ! flock -n 9; then
+  notify-send --app-name="Omni Code" "Release 正在打包" "请等待当前构建完成。" || true
+  exit 1
+fi
+
+cd "$project"
+printf '正在打包 Omni Code Release…\n日志：%s\n\n' "$state_dir/release.log"
+status=0
+if nix develop --no-update-lock-file "$project" --command flutter build linux --release 2>&1 | tee "$state_dir/release.log"; then
+  printf '\n打包成功。请从 Win+D 打开「Omni Code 本地版」。\n'
+  notify-send --app-name="Omni Code" "Release 打包成功" "可以启动 Omni Code 本地版了。" || true
+else
+  status=1
+  printf '\n打包失败，请查看上方错误或日志：%s\n' "$state_dir/release.log" >&2
+  notify-send --app-name="Omni Code" --urgency=critical "Release 打包失败" "请查看构建窗口或 $state_dir/release.log。" || true
+fi
+if [[ -t 0 ]]; then
+  read -r -p "按回车关闭窗口…" _ || true
+fi
+exit "$status"

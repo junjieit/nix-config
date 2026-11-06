@@ -1,4 +1,4 @@
-{ config, pkgs, lib, llm-agents, omni-code, omni-code-bridge, ... }:
+{ config, pkgs, lib, llm-agents, openpencil, omni-code, omni-code-bridge, ... }:
 
 let
   omniCode = omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code.override {
@@ -35,6 +35,7 @@ let
 in
 {
   imports = [
+    ./omni-code-local.nix
     omni-code-bridge.homeManagerModules.default
   ];
 
@@ -170,7 +171,9 @@ in
   };
 
   home.packages = with pkgs; [
+    openpencil.packages.${pkgs.stdenv.hostPlatform.system}.runtime-prebuilt
     llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.cc-switch-cli
+    llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.dsh
     himalaya
     lazygit
     sentry-cli
