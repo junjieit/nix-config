@@ -1,0 +1,8 @@
+{
+  "name": "miniprogram-ci-cli",
+  "version": "2.1.31",
+  "private": true,
+  "dependencies": {
+    "miniprogram-ci": "2.1.31"
+  }
+}

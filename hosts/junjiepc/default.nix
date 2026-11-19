@@ -2,8 +2,8 @@
 
 let
   androidBuildSdk = (pkgs.androidenv.composeAndroidPackages {
-    platformVersions = [ "31" "34" "35" "36" ];
-    buildToolsVersions = [ "35.0.0" "36.0.0" ];
+    platformVersions = [ "31" "34" "35" "36" "37.0" ];
+    buildToolsVersions = [ "35.0.0" "36.0.0" "37.0.0" ];
     includeCmake = true;
     cmakeVersions = [ "3.22.1" ];
     includeEmulator = false;
@@ -61,8 +61,8 @@ in
   networking.hostName = "junjiepc";
   networking.networkmanager.enable = true;
   networking.firewall = {
-    allowedTCPPorts = [ 7890 8787 53317 ];
-    allowedUDPPorts = [ 7890 53317 ];
+    allowedTCPPorts = [ 4317 7890 8787 53317 ];
+    allowedUDPPorts = [ 4317 7890 53317 ];
   };
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

@@ -36,6 +36,8 @@
             nixpkgs.overlays = [
               (final: prev: {
                 codex = prev.callPackage ./pkgs/codex.nix { };
+                miniprogram-ci = prev.callPackage ./pkgs/miniprogram-ci.nix { };
+                wechat-devtools-wine = prev.callPackage ./pkgs/wechat-devtools-wine.nix { };
                 zeroclaw = prev.callPackage ./pkgs/zeroclaw.nix { };
               })
             ];

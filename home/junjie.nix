@@ -178,6 +178,7 @@ in
     lazygit
     sentry-cli
     neovim
+    vscode
     kitty
     go
     omniCode
@@ -193,6 +194,7 @@ in
     python3Packages.isort
     slack
     obsidian
+    marktext
     vim
     localsend
     tigervnc
@@ -203,6 +205,9 @@ in
     opencodeV2
     pi-coding-agent
     wechat
+    wineWow64Packages.staging
+    winetricks
+    wechat-devtools-wine
     telegram-desktop
     flutter
     rustup
@@ -220,6 +225,7 @@ in
     librsvg
     poppler-utils
     nodejs
+    miniprogram-ci
     yarn
     pnpm
     redocly

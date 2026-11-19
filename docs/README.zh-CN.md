@@ -10,7 +10,7 @@ Hyprland/Wayland 作为桌面，SDDM 负责登录，Home Manager 管理用户级
 - 使用 Flakes 管理系统配置，输出为 `nixosConfigurations.junjiepc`
 - 模块化 Lua Hyprland 配置，以及 Hyprlock、Hypridle 和 Wpaperd
 - Wayle 状态栏，包含工作区、媒体、通知、天气、内存、网络、音频和电源模块
-- 每天 07:00/19:00 自动切换 GTK、Hyprland、Wayle 和 Ghostty 的亮暗主题
+- 每天 07:00/19:00 自动切换 GTK、Hyprland 和 Wayle 的亮暗主题
 - Fcitx5 中文输入法，启用 Wayland frontend
 - PipeWire 音频、蓝牙、NetworkManager、Docker 和 XDG Desktop Portal
 - Greenleaf SDDM 登录主题
@@ -33,7 +33,7 @@ sudo nixos-rebuild switch --flake .#junjiepc
 ~/.config/hypr/scripts/desktop-theme toggle
 ```
 
-主题脚本会更新 GTK、Hyprland 边框、Wayle 颜色，并触发已打开 Ghostty 窗口重载。
+主题脚本会更新 GTK、Hyprland 边框和 Wayle 颜色，不会强制重载已打开的 Ghostty 窗口。
 Firefox 和 Slack 可能需要完全退出后重新打开才能读取新主题；Slack 还可能需要在
 应用设置中重新切换一次“跟随系统”。
 
@@ -78,6 +78,29 @@ Bridge 本地版入口会打开终端，在项目的 Nix 开发环境中执行
 `omni-code-bridge-switch restore`。`omni-code-local --check` 显示选中的前端可执行文件。
 通过 `OMNI_CODE_LOCAL_BUNDLE` 可以指定其他前端 bundle，
 通过 `OMNI_CODE_BRIDGE_BINARY` 可以指定其他 bridge 可执行文件。
+
+## Windows 版微信开发者工具
+
+配置包含 Wine Staging、Winetricks 和 `微信开发者工具 (Wine)` 菜单入口，
+也可以运行 `wechat-devtools-wine`。独立环境保存在
+`~/.local/share/wineprefixes/wechat-devtools`。启动器使用中文界面，并关闭
+Chromium 硬件加速，以避开本机 Wine 下 GPU 进程崩溃的问题。启动器还会在独立环境
+中安装文泉驿微米黑，并设置 Windows 字体替代和中文字符回退链。启动时固定使用中文
+区域设置，启用 RGB ClearType 字体平滑，改善文件选择窗口中小字号文字的显示。每次启动
+都会重新应用回退链，避免 Wine 因 ANSI 代码页变化重置这些设置。已验证
+开发者工具 `2.02.2611122` 配合 Wine Staging `11.19` 能显示登录二维码；
+项目编译和真机调试仍需测试。
+
+Windows 程序需要使用下载的安装包单独安装：
+
+```sh
+export WINEPREFIX="$HOME/.local/share/wineprefixes/wechat-devtools"
+export WINEARCH=win64
+mkdir -p "$(dirname "$WINEPREFIX")"
+WINEDLLOVERRIDES='mscoree=;mshtml=;winemenubuilder.exe=d' wineboot --init
+wine "$HOME/下载/wechat_devtools_2.02.2611122_win32_x64.exe" /S '/D=C:\WeChatDevTools'
+wechat-devtools-wine
+```
 
 ## 目录结构
 

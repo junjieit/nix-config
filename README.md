@@ -11,7 +11,7 @@ display manager, and Home Manager for user applications and dotfiles.
 - Flake-based system configuration with `nixosConfigurations.junjiepc`
 - Modular Hyprland Lua configuration, plus Hyprlock, Hypridle, and Wpaperd
 - Wayle status bar with workspace, media, notification, weather, memory, network, audio, and power modules
-- Automatic light/dark theme switching at 07:00 and 19:00 for GTK, Hyprland, Wayle, and Ghostty
+- Automatic light/dark theme switching at 07:00 and 19:00 for GTK, Hyprland, and Wayle
 - Fcitx5 Chinese input method with the Wayland frontend
 - PipeWire audio, Bluetooth, NetworkManager, Docker, and XDG Desktop Portal
 - Greenleaf SDDM login theme
@@ -34,9 +34,10 @@ Switch the desktop theme manually:
 ~/.config/hypr/scripts/desktop-theme toggle
 ```
 
-The theme script updates GTK, Hyprland borders, Wayle colors, and open
-Ghostty windows. Firefox and Slack may need to be fully restarted before they
-pick up a new theme; Slack may also require toggling “Follow system” once.
+The theme script updates GTK, Hyprland borders, and Wayle colors. It does not
+trigger config reloads in open Ghostty windows. Firefox and Slack may need to be
+fully restarted before they pick up a new theme; Slack may also require toggling
+“Follow system” once.
 
 The GitHub Actions runner package is installed and can be checked with
 `Runner.Listener --version`. The `services.github-runners.junjiepc` entry in
@@ -85,6 +86,32 @@ The same actions are available as `omni-code-build-release`, `omni-code-local`,
 `omni-code-bridge-switch local|restore`. `omni-code-local --check` prints the
 selected executable. Set `OMNI_CODE_LOCAL_BUNDLE` to select a frontend bundle or
 `OMNI_CODE_BRIDGE_BINARY` to select another bridge executable.
+
+## Windows WeChat DevTools
+
+Wine Staging, Winetricks, and the `微信开发者工具 (Wine)` desktop entry are
+included. Run `wechat-devtools-wine` to use the dedicated prefix at
+`~/.local/share/wineprefixes/wechat-devtools`. The launcher selects Chinese and
+disables Chromium hardware acceleration because its GPU process crashes on
+this host under Wine. It also installs WenQuanYi Micro Hei into this prefix and
+sets Windows font aliases and CJK glyph fallback links for native file dialogs.
+RGB ClearType font smoothing is enabled for small text in these dialogs.
+It uses a Chinese locale consistently and reapplies these links at startup
+because Wine can reset them after an ANSI code page change.
+Login QR rendering was verified with DevTools
+`2.02.2611122` and Wine Staging `11.19`; project compilation and device debugging
+still need testing.
+
+The Windows application is installed separately from its downloaded installer:
+
+```sh
+export WINEPREFIX="$HOME/.local/share/wineprefixes/wechat-devtools"
+export WINEARCH=win64
+mkdir -p "$(dirname "$WINEPREFIX")"
+WINEDLLOVERRIDES='mscoree=;mshtml=;winemenubuilder.exe=d' wineboot --init
+wine "$HOME/下载/wechat_devtools_2.02.2611122_win32_x64.exe" /S '/D=C:\WeChatDevTools'
+wechat-devtools-wine
+```
 
 ## Repository Layout
 

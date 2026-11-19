@@ -72,7 +72,7 @@ printf '%s\n' "$mode" > "$state_dir/current"
 
 # User systemd services do not always inherit the variables exported by
 # Hyprland. Discover the active instance from its runtime sockets so timer
-# invocations can still update Hyprland and reload open Ghostty windows.
+# invocations can still update Hyprland and Wayle.
 runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 if [ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
   for instance_dir in "$runtime_dir"/hypr/*; do
@@ -122,12 +122,6 @@ if command -v gsettings >/dev/null 2>&1; then
   if [ "$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null)" != "'$color_scheme'" ]; then
     echo "desktop-theme: failed to apply GTK color scheme $color_scheme" >&2
   fi
-fi
-
-if command -v hyprctl >/dev/null 2>&1; then
-  # Ghostty exposes config reload as Ctrl+Shift+,. Send it after updating the
-  # system theme so open terminals pick up the new color scheme immediately.
-  hyprctl dispatch sendshortcut "CTRL SHIFT,comma,class:^(com.mitchellh.ghostty)$" >/dev/null 2>&1 || true
 fi
 
 if command -v wayle >/dev/null 2>&1; then
