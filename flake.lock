@@ -137,28 +137,6 @@
         "type": "github"
       }
     },
-    "fenix": {
-      "inputs": {
-        "nixpkgs": [
-          "omni-code-bridge",
-          "nixpkgs"
-        ],
-        "rust-analyzer-src": "rust-analyzer-src"
-      },
-      "locked": {
-        "lastModified": 1787640924,
-        "narHash": "sha256-5RH0X19vDtLjygX3vKEz9DcmCJ3iwnkMAg9ZNfvp31U=",
-        "owner": "nix-community",
-        "repo": "fenix",
-        "rev": "7e9f5c4746d2d4973e393317c4557f614f1398b8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "fenix",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -791,48 +769,6 @@
         "type": "github"
       }
     },
-    "omni-code": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1792769563,
-        "narHash": "sha256-g5WxpY03nQqG8wevgGjIc5FwQvjzIBlF3A4Qs0n92t4=",
-        "ref": "refs/heads/feat/x11box-acceptance",
-        "rev": "4806ec51f9dbfb8c5c35710b647dd86188976e38",
-        "revCount": 161,
-        "type": "git",
-        "url": "file:///data/code/code/omni-code"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:///data/code/code/omni-code"
-      }
-    },
-    "omni-code-bridge": {
-      "inputs": {
-        "fenix": "fenix",
-        "nixpkgs": [
-          "nixpkgs"
-        ],
-        "pi-agent-rust": "pi-agent-rust"
-      },
-      "locked": {
-        "lastModified": 1792769563,
-        "narHash": "sha256-1bm7NlMr7dsUA+2DVqlAsIX/R+ke7le5XmF9E4AQgkU=",
-        "ref": "refs/heads/feat/x11box-acceptance",
-        "rev": "163dfc65393bfb01a4e0b632817f5646d6b8d74e",
-        "revCount": 120,
-        "type": "git",
-        "url": "file:///data/code/code/omni-code-bridge"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:///data/code/code/omni-code-bridge"
-      }
-    },
     "openpencil": {
       "inputs": {
         "agent": "agent",
@@ -912,23 +848,6 @@
         "owner": "caniko",
         "ref": "flake",
         "repo": "osxcross",
-        "type": "github"
-      }
-    },
-    "pi-agent-rust": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1787300122,
-        "narHash": "sha256-eqYSWBMUCU81HIhGOfXbGHiPRLdOV4yrW4PJL6sxOSQ=",
-        "owner": "omni-stream-ai",
-        "repo": "pi_agent_rust",
-        "rev": "95b233f27ff2b8b62cf9642b90a60d11632a1560",
-        "type": "github"
-      },
-      "original": {
-        "owner": "omni-stream-ai",
-        "repo": "pi_agent_rust",
-        "rev": "95b233f27ff2b8b62cf9642b90a60d11632a1560",
         "type": "github"
       }
     },
@@ -1044,8 +963,6 @@
         "home-manager": "home-manager",
         "llm-agents": "llm-agents",
         "nixpkgs": "nixpkgs_2",
-        "omni-code": "omni-code",
-        "omni-code-bridge": "omni-code-bridge",
         "openpencil": "openpencil"
       }
     },
@@ -1122,23 +1039,6 @@
         "ref": "trunk",
         "type": "git",
         "url": "https://codeberg.org/caniko/rs-harbor.git"
-      }
-    },
-    "rust-analyzer-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1787593942,
-        "narHash": "sha256-dfVjama1vSef6Ajc0xyfv8Fi3sA+stx5yGbOu4IZIXw=",
-        "owner": "rust-lang",
-        "repo": "rust-analyzer",
-        "rev": "69d0e262cc12e4cac32a23b127c1537c71ad9beb",
-        "type": "github"
-      },
-      "original": {
-        "owner": "rust-lang",
-        "ref": "nightly",
-        "repo": "rust-analyzer",
-        "type": "github"
       }
     },
     "rust-overlay": {

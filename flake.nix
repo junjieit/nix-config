@@ -12,17 +12,18 @@
       url = "git+https://github.com/ZSeven-W/openpencil.git?ref=main&shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    omni-code = {
-      url = "git+file:///data/code/code/omni-code";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    omni-code-bridge = {
-      url = "git+file:///data/code/code/omni-code-bridge";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Disabled for a clean reinstall without the old /data/code repositories.
+    # omni-code = {
+    #   url = "git+file:///data/code/code/omni-code";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
+    # omni-code-bridge = {
+    #   url = "git+file:///data/code/code/omni-code-bridge";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
   };
 
-  outputs = { nixpkgs, home-manager, llm-agents, openpencil, omni-code, omni-code-bridge, ... }:
+  outputs = { nixpkgs, home-manager, llm-agents, openpencil, ... }:
     {
       nixosConfigurations.junjiepc = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -30,7 +31,7 @@
           ./hosts/junjiepc
           home-manager.nixosModules.home-manager
           {
-            home-manager.extraSpecialArgs = { inherit llm-agents openpencil omni-code omni-code-bridge; };
+            home-manager.extraSpecialArgs = { inherit llm-agents openpencil; };
             # ZeroClaw is not in nixpkgs yet, so surface the locally packaged
             # release binary as `pkgs.zeroclaw`.
             nixpkgs.overlays = [

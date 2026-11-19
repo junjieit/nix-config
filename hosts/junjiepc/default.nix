@@ -65,6 +65,7 @@ in
     allowedUDPPorts = [ 4317 7890 53317 ];
   };
   boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
   hardware.bluetooth.enable = true;
   services.udisks2.enable = true;
@@ -88,14 +89,16 @@ in
     memoryPercent = 50;
   };
 
-  # Disk-backed overflow after zram (whose default priority is 5).
-  swapDevices = [
-    {
-      device = "/var/lib/swapfile";
-      size = 16 * 1024; # MiB
-      priority = 0;
-    }
-  ];
+  # The clean install uses a 32 GiB swap partition after zram. Activate the
+  # partition before nixos-generate-config so hardware-configuration.nix records
+  # its UUID. Disable the old swap file to avoid allocating both on reinstall.
+  # swapDevices = [
+  #   {
+  #     device = "/var/lib/swapfile";
+  #     size = 16 * 1024; # MiB
+  #     priority = 0;
+  #   }
+  # ];
 
   # Enabling the daemon alone does not monitor the desktop or system services.
   # React to sustained reclaim stalls before the desktop becomes unresponsive.

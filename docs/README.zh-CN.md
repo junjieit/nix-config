@@ -44,10 +44,11 @@ Firefox 和 Slack 可能需要完全退出后重新打开才能读取新主题�
 
 ## 内存压力保护
 
-主机使用容量为物理内存 50% 的 zram swap，并在应用配置时自动创建
-16 GiB 的磁盘交换文件 `/var/lib/swapfile`。磁盘 swap 优先级为 0，低于 zram
-默认的 5，作为额外缓冲；它会占用根分区 16 GiB 空间。使用 `swapon --show`
-查看已启用的交换空间。`systemd-oomd` 监控系统服务和每个
+主机使用容量为物理内存 50% 的 zram swap。全新安装方案另外划分 32 GiB
+swap 分区作为后备，优先级低于 zram 默认的 5。安装时先启用该分区，再运行
+`nixos-generate-config`，让 `hosts/junjiepc/hardware-configuration.nix` 记录
+分区 UUID。旧的 16 GiB 交换文件已停用；重新构建本身不会创建分区。
+使用 `swapon --show` 查看已启用的交换空间。`systemd-oomd` 监控系统服务和每个
 用户管理器下的应用：用户内存压力持续超过 50%、系统服务持续超过 60%，达到
 10 秒后，会选择符合条件的应用或服务进程组终止。这些百分比指内存等待压力，
 不是内存使用率；被终止的应用可能丢失未保存内容。

@@ -48,10 +48,12 @@ To register it later, set `url` to the repository or organization URL, set
 
 ## Memory pressure protection
 
-The host uses zram swap sized to 50% of RAM, plus a 16 GiB disk swap file at
-`/var/lib/swapfile`, created automatically when the configuration is applied.
-The disk swap has priority 0, below zram's default priority of 5. It reserves
-16 GiB on the root filesystem; check active swap with `swapon --show`.
+The host uses zram swap sized to 50% of RAM. The fresh-install layout adds a
+32 GiB swap partition as overflow, below zram's default priority of 5. Activate
+the partition before running `nixos-generate-config` so its UUID is recorded
+in `hosts/junjiepc/hardware-configuration.nix`. The old 16 GiB swap file is
+disabled; rebuilding does not create a partition. Check active swap with
+`swapon --show`.
 `systemd-oomd` monitors system
 services and applications below each user manager. It terminates an eligible
 application or service group after memory pressure stays above 50% for users

@@ -1,27 +1,28 @@
-{ config, pkgs, lib, llm-agents, openpencil, omni-code, omni-code-bridge, ... }:
+{ config, pkgs, lib, llm-agents, openpencil, ... }:
 
 let
-  omniCode = omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code.override {
-    flutter = pkgs.flutter // {
-      # Use the source lockfile instead of the stale upstream JSON copy.
-      buildFlutterApplication = args: pkgs.flutter.buildFlutterApplication (
-        builtins.removeAttrs args [ "pubspecLock" ] // {
-          autoPubspecLock = omni-code.outPath + "/pubspec.lock";
-        }
-      );
-    };
-  };
-  omniCodeBridge = omni-code-bridge.packages.${pkgs.stdenv.hostPlatform.system}.omni-code-bridge.overrideAttrs (old: {
-    nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.git ];
-    cargoDeps = pkgs.rustPlatform.importCargoLock {
-      # Match upstream's local pi_agent_rust path while using the source lockfile.
-      lockFileContents = lib.concatStringsSep "\n" (
-        lib.filter
-          (line: !(lib.hasPrefix "source = \"git+https://github.com/omni-stream-ai/pi_agent_rust?" line))
-          (lib.splitString "\n" (builtins.readFile (omni-code-bridge.outPath + "/Cargo.lock")))
-      );
-    };
-  });
+  # Local Omni Code packages are disabled for the clean reinstall.
+  # omniCode = omni-code.packages.${pkgs.stdenv.hostPlatform.system}.omni-code.override {
+  #   flutter = pkgs.flutter // {
+  #     # Use the source lockfile instead of the stale upstream JSON copy.
+  #     buildFlutterApplication = args: pkgs.flutter.buildFlutterApplication (
+  #       builtins.removeAttrs args [ "pubspecLock" ] // {
+  #         autoPubspecLock = omni-code.outPath + "/pubspec.lock";
+  #       }
+  #     );
+  #   };
+  # };
+  # omniCodeBridge = omni-code-bridge.packages.${pkgs.stdenv.hostPlatform.system}.omni-code-bridge.overrideAttrs (old: {
+  #   nativeCheckInputs = (old.nativeCheckInputs or [ ]) ++ [ pkgs.git ];
+  #   cargoDeps = pkgs.rustPlatform.importCargoLock {
+  #     # Match upstream's local pi_agent_rust path while using the source lockfile.
+  #     lockFileContents = lib.concatStringsSep "\n" (
+  #       lib.filter
+  #         (line: !(lib.hasPrefix "source = \"git+https://github.com/omni-stream-ai/pi_agent_rust?" line))
+  #         (lib.splitString "\n" (builtins.readFile (omni-code-bridge.outPath + "/Cargo.lock")))
+  #     );
+  #   };
+  # });
   desktopThemeScript = "${pkgs.bash}/bin/bash ${config.xdg.configHome}/hypr/scripts/desktop-theme";
   gsettingsSchemaDir = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
   opencode2Package = llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode2;
@@ -35,8 +36,8 @@ let
 in
 {
   imports = [
-    ./omni-code-local.nix
-    omni-code-bridge.homeManagerModules.default
+    # ./omni-code-local.nix
+    # omni-code-bridge.homeManagerModules.default
   ];
 
   home.username = "junjie";
@@ -178,10 +179,9 @@ in
     lazygit
     sentry-cli
     neovim
-    vscode
     kitty
     go
-    omniCode
+    # omniCode
     pass
     gnupg
     pinentry-curses
@@ -253,26 +253,26 @@ in
     espeak-ng
   ];
 
-  services.omni-code-bridge = {
-    enable = true;
-    package = omniCodeBridge;
-    agentPackages = with pkgs; [
-      codex
-      claude-code
-      opencodeV2
-      pi-coding-agent
-    ];
-  };
+  # services.omni-code-bridge = {
+  #   enable = true;
+  #   package = omniCodeBridge;
+  #   agentPackages = with pkgs; [
+  #     codex
+  #     claude-code
+  #     opencodeV2
+  #     pi-coding-agent
+  #   ];
+  # };
 
   # The upstream module currently uses the NixOS-only `path = [ packages ]`
   # service option. Home Manager expects an attribute set there, so provide the
   # equivalent runtime PATH explicitly.
-  systemd.user.services.omni-code-bridge = {
-    path = lib.mkForce { };
-    Service.Environment = lib.mkAfter [
-      "PATH=${lib.makeBinPath [ pkgs.codex pkgs.claude-code opencodeV2 pkgs.pi-coding-agent pkgs.git pkgs.bash pkgs.coreutils ]}:/run/wrappers/bin:/run/current-system/sw/bin"
-    ];
-  };
+  # systemd.user.services.omni-code-bridge = {
+  #   path = lib.mkForce { };
+  #   Service.Environment = lib.mkAfter [
+  #     "PATH=${lib.makeBinPath [ pkgs.codex pkgs.claude-code opencodeV2 pkgs.pi-coding-agent pkgs.git pkgs.bash pkgs.coreutils ]}:/run/wrappers/bin:/run/current-system/sw/bin"
+  #   ];
+  # };
 
   xdg.enable = true;
   home.sessionVariables = {
@@ -285,15 +285,17 @@ in
     no_proxy = "localhost,127.0.0.1,::1";
   };
 
-  home.file.".ssh".source =
-    config.lib.file.mkOutOfStoreSymlink "/data/.ssh";
+  # Generate fresh SSH keys after reinstalling instead of linking the old keys.
+  # home.file.".ssh".source =
+  #   config.lib.file.mkOutOfStoreSymlink "/data/.ssh";
 
   xdg.configFile = {
     "ghostty/config".source = ./config/ghostty/config;
     "hypr".source = ./config/hypr;
-    "nvim".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "/data/code/nix-config/home/config/nvim";
+    "nvim".source = ./config/nvim;
+    # "nvim".source =
+    #   config.lib.file.mkOutOfStoreSymlink
+    #     "/data/code/nix-config/home/config/nvim";
     "neovide".source = ./config/neovide;
     "wpaperd".source = ./config/wpaperd;
     "wayle/config.toml".source = ./config/wayle/config.toml;
